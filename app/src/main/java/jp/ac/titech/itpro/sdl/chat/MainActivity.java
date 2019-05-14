@@ -43,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
     private ListView logview;
     private EditText input;
     private Button button;
+    private Button noteButton;
+
+    private boolean canSound = true;
 
     private final ArrayList<ChatMessage> chatLog = new ArrayList<>();
     private ArrayAdapter<ChatMessage> chatLogAdapter;
@@ -73,6 +76,22 @@ public class MainActivity extends AppCompatActivity {
         progress = findViewById(R.id.main_progress);
         input = findViewById(R.id.main_input);
         button = findViewById(R.id.main_button);
+        noteButton = findViewById(R.id.note_button);
+        noteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClickNoteButton");
+
+                messageSeq++;
+                long time = System.currentTimeMillis();
+                ChatMessage message = new ChatMessage(messageSeq, time, "", adapter.getName(),1);
+                agent.send(message);
+                chatLogAdapter.add(message);
+                chatLogAdapter.notifyDataSetChanged();
+                logview.smoothScrollToPosition(chatLog.size());
+                input.getEditableText().clear();
+            }
+        });
 
         chatLogAdapter = new ArrayAdapter<ChatMessage>(this, 0, chatLog) {
             @Override
@@ -228,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
         }
         messageSeq++;
         long time = System.currentTimeMillis();
-        ChatMessage message = new ChatMessage(messageSeq, time, content, adapter.getName());
+        ChatMessage message = new ChatMessage(messageSeq, time, content, adapter.getName(), 0);
         agent.send(message);
         chatLogAdapter.add(message);
         chatLogAdapter.notifyDataSetChanged();
@@ -244,6 +263,7 @@ public class MainActivity extends AppCompatActivity {
         this.state = state;
         input.setEnabled(state == State.Connected);
         button.setEnabled(state == State.Connected);
+        noteButton.setEnabled(state == State.Connected);
         switch (state) {
         case Initializing:
         case Disconnected:
@@ -254,7 +274,6 @@ public class MainActivity extends AppCompatActivity {
             break;
         case Connected:
             status.setText(getString(R.string.main_status_connected_to, arg));
-            soundPlayer.playConnected();
             break;
         case Waiting:
             status.setText(R.string.main_status_listening_for_incoming_connection);
@@ -271,6 +290,10 @@ public class MainActivity extends AppCompatActivity {
         chatLogAdapter.add(message);
         chatLogAdapter.notifyDataSetChanged();
         logview.smoothScrollToPosition(chatLogAdapter.getCount());
+        int id = message.id;
+        if(id == 1){
+            soundPlayer.playConnected();
+        }
     }
 
     private void disconnect() {
